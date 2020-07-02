@@ -1,4 +1,5 @@
 const Tour = require('./../models/tourModel');
+const Booking = require('./../models/bookingModel');
 const catchAsync = require('./../utils/catchAsync');
 const AppError = require('./../utils/appError');
 
@@ -10,7 +11,7 @@ exports.getOverview = catchAsync(async (req, res, next) =>
     res.status(200).render('overview', {
         title: 'All Tours',
         tours
-    })
+    });
 });
 
 exports.getTour = catchAsync(async (req, res, next) =>
@@ -21,24 +22,39 @@ exports.getTour = catchAsync(async (req, res, next) =>
     });
 
     if (!tour)
-        return next(new AppError('There is no tour with that name.', 404))
+        return next(new AppError('There is no tour with that name.', 404));
 
     res.status(200).render('tour', {
         title: `${tour.name} Tour`,
         tour
-    })
+    });
 });
 
 exports.getLoginForm = (req, res) =>
 {
     res.status(200).render('login', {
         title: 'Login'
-    })
+    });
 }
 
 exports.getAccount = (req, res) =>
 {
     res.status(200).render('account', {
         title: 'Your Account'
-    })
+    });
 }
+
+exports.getMyTours = catchAsync(async (req, res, next) =>
+{
+    // Find all booking 
+    const bookings = await Booking.find({ user: req.user.id });
+
+    // Find tours with the returned IDs
+    const tourIDs = bookings.map(el => el.tour);
+    const tours = await Tour.find({ _id: { $in: tourIDs } });
+
+    res.status(200).render('overview', {
+        title: 'My tours',
+        tours
+    });
+});

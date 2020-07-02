@@ -51,7 +51,6 @@ const userSchema = new mongoose.Schema({
         default: true,
         select: false
     }
-
 });
 
 userSchema.pre(/^find/, function (next)

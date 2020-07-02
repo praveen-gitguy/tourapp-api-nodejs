@@ -7,6 +7,9 @@ const xss = require('xss-clean');
 const hpp = require('hpp');
 const cookieParser = require('cookie-parser');
 
+const dotenv = require('dotenv');
+dotenv.config({ path: './config.env' });
+
 const app = express();
 
 const AppError = require('./utils/appError');
@@ -14,6 +17,7 @@ const globalErrorHandler = require('./controllers/errorController');
 const tourRoute = require('./routes/tourRoutes');
 const userRoute = require('./routes/userRoutes');
 const reviewRoute = require('./routes/reviewRoutes');
+const bookingRouter = require('./routes/bookingRoutes');
 const viewRouter = require('./routes/viewRoutes');
 
 
@@ -56,6 +60,8 @@ app.use((req, res, next) =>
 app.use('/api/tours', tourRoute);
 app.use('/api/users', userRoute);
 app.use('/api/reviews', reviewRoute);
+app.use('/api/bookings', bookingRouter);
+
 app.use('/', viewRouter);
 
 app.all('*', (req, res, next) =>

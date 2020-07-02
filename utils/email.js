@@ -1,32 +1,82 @@
 const nodemailer = require('nodemailer');
+const pug = require('pug');
+const htmlToText = require('html-to-text');
 
-sendEmail = async (options) =>
+module.exports = class Email
 {
-    const transporter = nodemailer.createTransport({
-        host: process.env.EMAIL_HOST,
-        port: process.env.EMAIL_PORT,
-        auth: {
-            user: process.env.EMAIL_USERNAME,
-            pass: process.env.EMAIL_PASSWORD
+    constructor(user, url)
+    {
+        this.to = user.email;
+        this.firstName = user.name.split('')[0];
+        this.url = url;
+        this.from = `Praveen Kumar <${process.env.EMAIL_FROM}>`;
+    }
+
+    newTransport()
+    {
+        if (process.env.NODE_ENV === 'production') {
+            return nodemailer.createTransport({
+                service: 'SendGrid',
+                auth: {
+                    user: process.env.SENDGID_USERNAME,
+                    pass: process.env.SENDGRID_PASSWORD
+                }
+            });
+        } else {
+            return nodemailer.createTransport({
+                host: process.env.EMAIL_HOST,
+                port: process.env.EMAIL_PORT,
+                auth: {
+                    user: process.env.EMAIL_USERNAME,
+                    pass: process.env.EMAIL_PASSWORD
+                }
+            });
         }
-    });
+    }
 
-    // var transporter = nodemailer.createTransport({
-    //     host: "smtp.mailtrap.io",
-    //     port: 2525,
-    //     auth: {
-    //         user: "c0fff11717f7c0",
-    //         pass: "0868d75c420ca4"
-    //     }
-    // });
+    async send(template, subject)
+    {
+        // Send the actual email
+        // 1. Render html based on a pug template
+        const html = pug.renderFile(`${__dirname}/../views/email/${template}.pug`, {
+            firstName: this.firstName,
+            url: this.url,
+            subject
+        });
 
-    const mailOptions = {
-        from: '"Test Server" <test@maill.io>',
-        to: options.email,
-        subject: options.subject,
-        text: options.message
-    };
+        // 2. define email options
+        const mailOptions = {
+            from: this.from,
+            to: this.to,
+            subject,
+            html,
+            text: htmlToText.fromString(html)
+        };
 
-    await transporter.sendMail(mailOptions);
+        // 3. create a transpport and send email
+        await this.newTransport().sendMail(mailOptions);
+    }
+
+    async sendWelome()
+    {
+        await this.send('welcome', 'Welcome to the natours family!');
+    }
+
+    async sendPasswordReset()
+    {
+        await this.send('passwordReset', 'Your password reset token (valid for only ten minute');
+    }
+
 }
-module.exports = sendEmail;
+
+// const sendEmail = async (options) =>
+// {
+//     const mailOptions = {
+//         from: '"Test Server" <test@maill.io>',
+//         to: options.email,
+//         subject: options.subject,
+//         text: options.message
+//     };
+
+//     await transporter.sendMail(mailOptions);
+// }
